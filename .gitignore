@@ -1,0 +1,22 @@
+# Arduino CLI generated/cache files
+.arduino-data/
+.arduino-staging/
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Compiled binaries and build artifacts
+binaries/
+*.bin
+*.elf
+*.hex
+
+# IDE-specific files
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db

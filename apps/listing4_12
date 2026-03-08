@@ -1,0 +1,34 @@
+#include "embedDIP.h"
+#include <Arduino.h>
+
+const int PIN_BUTTON = 15;
+
+SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
+
+embedDIP::Image rgbImg;
+embedDIP::Image rgb565Img;
+embedDIP::Image grayImg;
+embedDIP::SerialDev serial(&esp32_uart);
+
+void setup() {
+  rgbImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_RGB888);
+  rgb565Img = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_RGB565);
+  grayImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
+
+  serial.init();
+
+  pinMode(PIN_BUTTON, INPUT_PULLUP);
+}
+
+void loop() {
+  if (digitalRead(PIN_BUTTON) == LOW) {
+    serial.capture(rgbImg);
+
+    rgbImg.cvtColor(rgb565Img, CVT_RGB888_TO_RGB565);
+    serial.send(rgb565Img);
+
+    rgbImg.cvtColor(grayImg, CVT_RGB888_TO_GRAYSCALE);
+    serial.send(grayImg);
+  }
+  delay(100);
+}
