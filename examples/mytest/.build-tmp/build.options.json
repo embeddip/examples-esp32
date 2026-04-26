@@ -1,0 +1,9 @@
+{
+  "additionalFiles": "../..,../..,../..",
+  "compiler.optimization_flags": "-Os",
+  "customBuildProperties": "",
+  "fqbn": "esp32:esp32:esp32:PSRAM=enabled",
+  "hardwareFolders": ".arduino-data/packages",
+  "otherLibrariesFolders": "/media/odurgut/82a56851-6a27-45e3-afb0-3549236924ca/sda1/book/arduinotest/libraries,/media/odurgut/82a56851-6a27-45e3-afb0-3549236924ca/sda1/book/arduinotest/libraries",
+  "sketchLocation": "/media/odurgut/82a56851-6a27-45e3-afb0-3549236924ca/sda1/book/arduinotest/examples/mytest"
+}

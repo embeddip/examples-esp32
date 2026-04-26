@@ -3,7 +3,7 @@
 set -u
 
 # Configuration
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(pwd)"
 APPS_DIR="$ROOT_DIR/apps"
 MYTEST_DIR="$ROOT_DIR/examples/mytest"
 MYTEST_INO="$MYTEST_DIR/mytest.ino"
@@ -79,7 +79,7 @@ echo
 
 # Prevent literal "listing*" when no files match.
 shopt -s nullglob
-APP_FILES=("$APPS_DIR"/listing*)
+APP_FILES=("$APPS_DIR"/Listing*)
 shopt -u nullglob
 
 if [ ${#APP_FILES[@]} -eq 0 ]; then
