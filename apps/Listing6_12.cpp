@@ -1,0 +1,39 @@
+#include "embedDIP.hpp"
+#include <Arduino.h>
+
+const int PIN_BUTTON = 15;
+int button_state = 0;
+
+SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
+
+embedDIP::Image inImg;
+embedDIP::Image outImg;
+embedDIP::SerialDev serial(&esp32_uart);
+
+void setup() {
+  serial.init();
+
+  inImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
+  outImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
+
+  pinMode(PIN_BUTTON, INPUT_PULLUP);
+}
+
+void loop() {
+  if (digitalRead(PIN_BUTTON) == LOW) {
+    for (int img_idx = 0; img_idx < 4; ++img_idx) {
+      serial.capture(inImg);
+
+      inImg.histEq(outImg);
+
+      outImg.convertTo();
+      serial.send(outImg);
+
+      std::vector<int> histogram(256, 0);
+      outImg.histForm(histogram);
+      serial.send1D(histogram.data(), sizeof(int), histogram.size(),
+                    SERIAL_DATA_HISTOGRAM);
+    }
+  }
+  delay(100);
+}

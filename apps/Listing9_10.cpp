@@ -25,11 +25,13 @@ void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
     serial.capture(inImg);
 
-    embedDIP::Point seeds[1] = {{200, 150}};
-    inImg.grayscaleRegionGrowing(outImg, seeds, 1, 80);
+    inImg.grayscaleThreshold(inImg, 128);
+
+    inImg.connectedComponents(outImg);
 
     outImg.convertTo();
     serial.send(outImg);
   }
+
   delay(100);
 }

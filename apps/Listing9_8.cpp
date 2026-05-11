@@ -8,14 +8,19 @@
 SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
 
 embedDIP::SerialDev serial(&esp32_uart);
+
 embedDIP::Image inImg;
 embedDIP::Image outImg;
+
+embedDIP::Kernel k;
 
 void setup() {
   serial.init();
 
   inImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
   outImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
+
+  k.getStructuringElement(MORPH_ELLIPSE, 3);
 
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 }
@@ -24,10 +29,13 @@ void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
     serial.capture(inImg);
 
-    inImg.grayscaleKMeans(outImg, 5);
+    inImg.grayscaleThreshold(inImg, 128);
+
+    inImg.closing(outImg, k, 3);
 
     outImg.convertTo();
     serial.send(outImg);
   }
+
   delay(100);
 }

@@ -1,24 +1,21 @@
 #include "embedDIP.hpp"
 #include <Arduino.h>
 
+#ifndef PIN_BUTTON
 #define PIN_BUTTON 15
+#endif
 
 SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
 
 embedDIP::SerialDev serial(&esp32_uart);
-
 embedDIP::Image inImg;
-embedDIP::Image fftImg;
-embedDIP::Image magnitudeImg;
-embedDIP::Image phaseImg;
+embedDIP::Image outImg;
 
 void setup() {
   serial.init();
 
-  inImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
-  fftImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
-  magnitudeImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
-  phaseImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
+  inImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
+  outImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
 
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 }
@@ -27,20 +24,9 @@ void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
     serial.capture(inImg);
 
-    inImg.fft(fftImg);
-    fftImg.fftshift();
+    inImg.grayscaleThreshold(outImg, 160);
 
-    fftImg._abs_(magnitudeImg);
-    fftImg._phase_(phaseImg);
-
-    magnitudeImg._add_(1.0f);
-    magnitudeImg._log_();
-
-    magnitudeImg.convertTo();
-    serial.send(magnitudeImg);
-
-    phaseImg.convertTo();
-    serial.send(phaseImg);
+    serial.send(outImg);
   }
   delay(100);
 }

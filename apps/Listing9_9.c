@@ -9,8 +9,8 @@ SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
 
 serial_t *serial = &esp32_uart;
 
-Image *inImg = nullptr;
-Image *outImg = nullptr;
+Image *inImg = NULL;
+Image *outImg = NULL;
 
 void setup() {
   serial->init();
@@ -22,11 +22,14 @@ void setup() {
 void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
     serial->capture(inImg);
+    serial->send(inImg);
 
-    Point seeds[1] = {{200, 150}};
-    grayscaleRegionGrowing(inImg, outImg, seeds, 1, 80);
+    grayscaleThreshold(inImg, inImg, 128);
+    serial->send(inImg);
 
-    convertTo(outImg);
+    connectedComponents(inImg, outImg, NULL);
+
+    normalize(outImg);
     serial->send(outImg);
   }
   delay(100);

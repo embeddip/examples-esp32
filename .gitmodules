@@ -1,0 +1,3 @@
+[submodule "libraries/embedDIP/src"]
+	path = libraries/embedDIP/src
+	url = https://github.com/EmbedDIP/embedDIP.git

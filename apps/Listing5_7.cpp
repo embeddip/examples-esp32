@@ -1,34 +1,33 @@
-#include <Arduino.h>
-#include <embedDIP.h>
+#include "embedDIP.hpp"
 
-#define PIN_BUTTON 15
-int button_state = 0;
+const int PIN_BUTTON = 15;
 
 SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
 
-Image *qvgaImg = nullptr;
-Image *qqvgaImg = nullptr;
+embedDIP::SerialDev serial(&esp32_uart);
+embedDIP::Camera camera(&esp32_ov2640);
 
-serial_t *serial = &esp32_uart;
-camera_t *camera = &esp32_ov2640;
+embedDIP::Image inImg;
+embedDIP::Image compressedImg;
 
 void setup() {
-  serial->init();
-  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_RGB565, &qvgaImg);
-  createImage(IMAGE_RES_QQVGA, IMAGE_FORMAT_RGB565, &qqvgaImg);
+  serial.init();
+  camera.init(IMAGE_RES_QQVGA, IMAGE_FORMAT_RGB565);
+
+  inImg = embedDIP::Image(IMAGE_RES_QQVGA, IMAGE_FORMAT_RGB565);
+  compressedImg = embedDIP::Image(IMAGE_RES_QQVGA, IMAGE_FORMAT_RGB888);
+
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 }
 
 void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
-    camera->init(IMAGE_RES_QVGA, IMAGE_FORMAT_RGB565);
-    camera->capture(SINGLE, qvgaImg);
-    serial->send(qvgaImg);
-    camera->stop();
-    
-    camera->setRes(IMAGE_RES_QQVGA);
-    camera->capture(SINGLE, qqvgaImg);
-    serial->send(qqvgaImg);
+    while (digitalRead(PIN_BUTTON) == LOW) {
+      if (camera.capture(SINGLE, inImg) == 0 &&
+          inImg.compressJPEG(compressedImg, 75) == 0) {
+        serial.sendJPEG(compressedImg);
+      }
+    }
   }
   delay(100);
 }

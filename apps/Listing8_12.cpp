@@ -1,22 +1,24 @@
 #include "embedDIP.hpp"
 #include <Arduino.h>
 
+#ifndef PIN_BUTTON
 #define PIN_BUTTON 15
+#endif
 
 SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
 
 embedDIP::SerialDev serial(&esp32_uart);
 
 embedDIP::Image inImg;
-embedDIP::Image filterImg;
+embedDIP::Image maskImg;
 embedDIP::Image outImg;
 
 void setup() {
   serial.init();
 
-  inImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
-  filterImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
-  outImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
+  inImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
+  maskImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
+  outImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
 
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 }
@@ -25,16 +27,17 @@ void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
     serial.capture(inImg);
 
-    inImg.fft(inImg);
-    inImg.fftshift();
+    Rectangle roi;
+    roi.x = 193;
+    roi.y = 24;
+    roi.width = 241;
+    roi.height = 244;
 
-    filterImg.getFilter(FREQ_FILTER_IDEAL_BANDPASS, 10.0f, 60.0f);
+    inImg.grabCutLite(maskImg, roi, 1);
+    maskImg.convertTo();
+    serial.send(maskImg);
 
-    inImg.ffilter2D(filterImg, outImg);
-
-    outImg.fftshift();
-    outImg.ifft(outImg);
-
+    inImg._and_(maskImg, outImg);
     outImg.convertTo();
     serial.send(outImg);
   }

@@ -1,26 +1,38 @@
-#include "embedDIP.h"
-#include "image_data.h"
-
-const int PIN_BUTTON = 15;
-
-SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
+#include <Arduino.h>
+#include <embedDIP.h>
 
 serial_t *serial = &esp32_uart;
 
-Image *QVGA_RGB565_IMG = NULL;
+Image *rgbImg = NULL;
+Image *rgb565Img = NULL;
+Image *rgbRoundTripImg = NULL;
+Image *grayOrig = NULL;
+Image *grayRoundTrip = NULL;
+Image *diffImg = NULL;
 
 void setup() {
   serial->init();
-  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_RGB565, &QVGA_RGB565_IMG);
-  pinMode(PIN_BUTTON, INPUT_PULLUP);
+
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_RGB888, &rgbImg);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_RGB565, &rgb565Img);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_RGB888, &rgbRoundTripImg);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &grayOrig);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &grayRoundTrip);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &diffImg);
+
+  serial->capture(rgbImg);
+
+  cvtColor(rgbImg, rgb565Img, CVT_RGB888_TO_RGB565);
+  cvtColor(rgb565Img, rgbRoundTripImg, CVT_RGB565_TO_RGB888);
+
+  cvtColor(rgbImg, grayOrig, CVT_RGB888_TO_GRAYSCALE);
+  cvtColor(rgbRoundTripImg, grayRoundTrip, CVT_RGB888_TO_GRAYSCALE);
+
+  difference(grayOrig, grayRoundTrip, diffImg);
+  convertTo(diffImg);
+  serial->send(diffImg);
 }
 
 void loop() {
-  if (digitalRead(PIN_BUTTON) == LOW) {
-    memcpy(QVGA_RGB565_IMG->pixels, image_data,
-           QVGA_RGB565_IMG->size * QVGA_RGB565_IMG->depth);
-
-    serial->send(QVGA_RGB565_IMG);
-  }
-  delay(100);
+  delay(10);
 }

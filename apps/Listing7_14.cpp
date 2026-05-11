@@ -1,40 +1,42 @@
 #include "embedDIP.hpp"
 #include <Arduino.h>
 
-const int PIN_BUTTON = 15;
-int button_state = 0;
+#define PIN_BUTTON 15
 
 SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
 
-embedDIP::Image srcImg;
-embedDIP::Image refImg;
-embedDIP::Image outImg;
 embedDIP::SerialDev serial(&esp32_uart);
+
+embedDIP::Image inImg;
+embedDIP::Image filterImg;
+embedDIP::Image outImg;
 
 void setup() {
   serial.init();
 
-  srcImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
-  refImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
-  outImg = embedDIP::Image(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE);
+  inImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
+  filterImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
+  outImg = embedDIP::Image(256, 256, IMAGE_FORMAT_GRAYSCALE);
 
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 }
 
 void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
-    for (int img_idx = 0; img_idx < 4; ++img_idx) {
-      serial.capture(refImg);
-      std::vector<int> histogram(256, 0);
-      refImg.histForm(histogram);
+    serial.capture(inImg);
 
-      serial.capture(srcImg);
+    inImg.fft(inImg);
+    inImg.fftshift();
 
-      srcImg.histSpec(outImg, histogram);
+    filterImg.getFilter(FREQ_FILTER_GAUSSIAN_BANDPASS, 10.0f, 60.0f);
 
-      outImg.convertTo();
-      serial.send(outImg);
-    }
+    inImg.ffilter2D(filterImg, outImg);
+
+    outImg.fftshift();
+    outImg.ifft(outImg);
+
+    outImg.convertTo();
+    serial.send(outImg);
   }
   delay(100);
 }

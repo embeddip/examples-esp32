@@ -36653,6 +36653,6 @@ alignas(8) const unsigned char mnist_model_tflite[] = {
   0x00, 0x00, 0x00, 0x09,
 };
 
-const unsigned int best_mnist_model_tflite_len = 439732;
+const unsigned int mnist_model_tflite_len = 439732;
 
 #endif  // BEST_MNIST_MODEL_H

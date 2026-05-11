@@ -1,25 +1,24 @@
 #include "embedDIP.h"
 #include <Arduino.h>
 
+#ifndef PIN_BUTTON
 #define PIN_BUTTON 15
+#endif
 
 SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
 
 serial_t *serial = &esp32_uart;
 
-Image *inImg = nullptr;
-Image *fftImg = nullptr;
-Image *filter = nullptr;
-Image *outImg = nullptr;
+Image *inImg = NULL;
+Image *outImg = NULL;
+Image *maskImg = NULL;
 
 void setup() {
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &inImg);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &outImg);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_MASK, &maskImg);
+
   serial->init();
-
-  createImageWH(256, 256, IMAGE_FORMAT_GRAYSCALE, &inImg);
-  createImageWH(256, 256, IMAGE_FORMAT_GRAYSCALE, &fftImg);
-  createImageWH(256, 256, IMAGE_FORMAT_GRAYSCALE, &filter);
-  createImageWH(256, 256, IMAGE_FORMAT_GRAYSCALE, &outImg);
-
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 }
 
@@ -27,16 +26,18 @@ void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
     serial->capture(inImg);
 
-    fft(inImg, fftImg);
-    fftshift(fftImg);
+    Rectangle roi;
+    roi.x = 193;
+    roi.y = 24;
+    roi.width = 241;
+    roi.height = 244;
 
-    getFilter(filter, FREQ_FILTER_IDEAL_BANDPASS, 10, 60);
-    ffilter2D(fftImg, filter, outImg);
+    grabCutLite(inImg, maskImg, roi, 1);
 
-    fftshift(outImg);
-    ifft(outImg, outImg);
+    convertTo(maskImg);
+    serial->send(maskImg);
 
-    convertTo(outImg);
+    _and_(inImg, maskImg, outImg);
     serial->send(outImg);
   }
   delay(100);

@@ -9,34 +9,37 @@ SET_LOOP_TASK_STACK_SIZE(16 * 1024 * 2);
 
 serial_t *serial = &esp32_uart;
 
-Image *inImg = nullptr;
-Image *fftImg = nullptr;
-Image *filter = nullptr;
+Image *inImg  = nullptr;
+Image *gX     = nullptr;
+Image *gY     = nullptr;
 Image *outImg = nullptr;
 
 void setup() {
   serial->init();
-  createImageWH(256, 256, IMAGE_FORMAT_GRAYSCALE, &inImg);
-  createImageWH(256, 256, IMAGE_FORMAT_GRAYSCALE, &fftImg);
-  createImageWH(256, 256, IMAGE_FORMAT_GRAYSCALE, &filter);
-  createImageWH(256, 256, IMAGE_FORMAT_GRAYSCALE, &outImg);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &inImg);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &gX);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &gY);
+  createImage(IMAGE_RES_QVGA, IMAGE_FORMAT_GRAYSCALE, &outImg);
   pinMode(PIN_BUTTON, INPUT_PULLUP);
 }
 
 void loop() {
   if (digitalRead(PIN_BUTTON) == LOW) {
+    // Capture input
     serial->capture(inImg);
 
-    fft(inImg, fftImg);
-    fftshift(fftImg);
+    // Gaussian gradients
+    gaussianGradients(inImg, gX, gY, 1.2f);
 
-    getFilter(filter, FREQ_FILTER_GAUSSIAN_HIGHPASS, 30.0f, 0.0f);
+    // Send gx, gy
+    convertTo(gX);
+    serial->send(gX);
 
-    ffilter2D(fftImg, filter, outImg);
+    convertTo(gY);
+    serial->send(gY);
 
-    fftshift(outImg);
-    ifft(outImg, outImg);
-
+    // Gradient magnitude from gx, gy
+    gradientMagnitude(gX, gY, outImg);
     convertTo(outImg);
     serial->send(outImg);
   }
