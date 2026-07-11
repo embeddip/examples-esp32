@@ -1,6 +1,17 @@
-# Embedded Digital Image Processing with Microcontrollers: Applications on Arduino Boards
+# Embedded Digital Image Processing with Microcontrollers: ESP32 Examples
 
-Example ESP32 sketches and support files from the book.
+Source repository: https://github.com/embeddip/examples-esp32
+
+This repository contains ESP32 example sketches and support files for the book *Embedded Digital Image Processing with Microcontrollers*. It includes listing applications, Arduino sketches, board configuration, and local library files used by the examples.
+
+## Contents
+
+- `apps/`: listing applications from the book.
+- `examples/`: Arduino sketch directories used for testing and demonstration.
+- `libraries/`: local Arduino libraries required by the examples.
+- `boards.fqbn`: default Arduino board target.
+- `arduino-cli.yaml`: Arduino CLI configuration.
+- `build_all_apps.sh`: script for compiling all listing applications.
 
 ## Requirements
 
@@ -45,7 +56,7 @@ Upload the current test sketch:
 arduino-cli upload --config-file arduino-cli.yaml --fqbn "$(tr -d '\r\n' < boards.fqbn)" --port /dev/ttyUSB0 examples/mytest/
 ```
 
-Change `/dev/ttyUSB0` if your board appears on a different serial port.
+Change `/dev/ttyUSB0` if the board appears on a different serial port.
 
 ## Board Configuration
 
@@ -55,4 +66,10 @@ The default board target is stored in `boards.fqbn`. To use another board, edit 
 BOARD_FQBN="esp32:esp32:esp32:PSRAM=enabled" ./build_all_apps.sh
 ```
 
-Some listings require PSRAM, so use a board and FQBN configuration that enables it.
+Some listings require PSRAM. Use a board and FQBN configuration that enables it when needed.
+
+## Related Repositories
+
+- Core library: https://github.com/embeddip/embedDIP
+- Python UART transfer tool: https://github.com/embeddip/PyDIPLink
+- STM32 examples: https://github.com/embeddip/examples-stm32
